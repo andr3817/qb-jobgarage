@@ -38,15 +38,28 @@ local function payment(data, price, Player, origrinalPlayer)
             return false
         end
     else
-        if origrinalPlayer.Functions.RemoveMoney(data.moneyType, price, Config.Lang.bankStatementText) then
-            if data.moneyType == 'bank' then
-                local newBankBalance = origrinalPlayer.Functions.GetMoney('bank')
-                exports['qb-banking']:addBankStatement(origrinalPlayer.PlayerData.citizenid, 'Bank', 0, price, newBankBalance, Config.Lang.bankStatementText, {newBankBalance = newBankBalance})
+        if origrinalPlayer == nil then
+            if Player.Functions.RemoveMoney(data.moneyType, price, Config.Lang.bankStatementText) then
+                if data.moneyType == 'bank' then
+                    local newBankBalance = Player.Functions.GetMoney('bank')
+                    exports['qb-banking']:addBankStatement(Player.PlayerData.citizenid, 'Bank', 0, price, newBankBalance, Config.Lang.bankStatementText, {newBankBalance = newBankBalance})
+                end
+                return true
+            else
+                TriggerClientEvent('QBCore:Notify', Player.PlayerData.source, Config.Lang.notEnoughMoney, "error", 3500)
+                return false
             end
-            return true
         else
-            TriggerClientEvent('QBCore:Notify', origrinalPlayer.PlayerData.source, Config.Lang.notEnoughMoney, "error", 3500)
-            return false
+            if origrinalPlayer.Functions.RemoveMoney(data.moneyType, price, Config.Lang.bankStatementText) then
+                if data.moneyType == 'bank' then
+                    local newBankBalance = origrinalPlayer.Functions.GetMoney('bank')
+                    exports['qb-banking']:addBankStatement(origrinalPlayer.PlayerData.citizenid, 'Bank', 0, price, newBankBalance, Config.Lang.bankStatementText, {newBankBalance = newBankBalance})
+                end
+                return true
+            else
+                TriggerClientEvent('QBCore:Notify', origrinalPlayer.PlayerData.source, Config.Lang.notEnoughMoney, "error", 3500)
+                return false
+            end
         end
     end
 end
