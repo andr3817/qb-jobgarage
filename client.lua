@@ -11,7 +11,7 @@ local function canBuy(data, PlayerData)
     end
 end
 
-local function openMenu(job, platePrefix, defaultGarage)
+local function openMenu(job, platePrefix, defaultGarage, payWithBossMenu, moneyType)
     local PlayerData = QBCore.Functions.GetPlayerData()
     local menu = {}
     menu[#menu+1] = {
@@ -27,13 +27,17 @@ local function openMenu(job, platePrefix, defaultGarage)
                     icon = 'fas fa-star',
                     isServer = false,
                     params = {
-                        event = 'qb-jobgarage:client:Sure',
+                        event = 'qb-jobgarage:client:ForMeOrForOther',
                         args = {
                             model = k,
                             price = v.price,
                             tune = v.fullTune,
+                            job = job,
                             platePrefix = platePrefix,
                             defaultGarage = defaultGarage,
+                            payWithBossMenu = payWithBossMenu,
+                            moneyType = moneyType,
+                            origrinalPlayer = PlayerData.source,
                         }
                     }
                 }
@@ -42,7 +46,7 @@ local function openMenu(job, platePrefix, defaultGarage)
     exports["qb-menu"]:openMenu(menu)
 end
 
-RegisterNetEvent('qb-jobgarage:client:Sure', function(data)
+local function openSureMenu(data)
     local menu = {}
     menu[#menu+1] = {
         header = Config.Lang.sureMenuHeader,
@@ -59,8 +63,13 @@ RegisterNetEvent('qb-jobgarage:client:Sure', function(data)
                 model = data.model,
                 price = data.price,
                 tune = data.tune,
+                job = data.job,
                 platePrefix = data.platePrefix,
                 defaultGarage = data.defaultGarage,
+                payWithBossMenu = data.payWithBossMenu,
+                moneyType = data.moneyType,
+                id = data.id,
+                origrinalPlayer = data.origrinalPlayer,
             }
         }
     }
@@ -73,7 +82,85 @@ RegisterNetEvent('qb-jobgarage:client:Sure', function(data)
         }
     }
     exports["qb-menu"]:openMenu(menu)
+end
+
+RegisterNetEvent('qb-jobgarage:client:ForMeOrForOther', function(data)
+    local menu = {}
+    menu[#menu+1] = {
+        header = Config.Lang.meOrOtherMenuHeader,
+        icon = 'fas fa-code',
+        isMenuHeader = true, -- Set to true to make a nonclickable title
+    }
+    menu[#menu+1] = {
+        header = Config.Lang.meHeader,
+        icon = 'fas fa-star',
+        isServer = true,
+        params = {
+            event = 'qb-jobgarage:client:Sure',
+            args = {
+                id = nil,
+                model = data.model,
+                price = data.price,
+                tune = data.tune,
+                job = data.job,
+                platePrefix = data.platePrefix,
+                defaultGarage = data.defaultGarage,
+                payWithBossMenu = data.payWithBossMenu,
+                moneyType = data.moneyType,
+            }
+
+        }
+    }
+    menu[#menu+1] = {
+        header = Config.Lang.otherHeader,
+        icon = 'fas fa-star',
+        isServer = false,
+        params = {
+            event = 'qb-jobgarage:client:Who',
+            args = {
+                model = data.model,
+                price = data.price,
+                tune = data.tune,
+                job = data.job,
+                platePrefix = data.platePrefix,
+                defaultGarage = data.defaultGarage,
+                payWithBossMenu = data.payWithBossMenu,
+                moneyType = data.moneyType,
+                origrinalPlayer = data.origrinalPlayer,
+            }
+        }
+    }
+    exports["qb-menu"]:openMenu(menu)
 end)
+
+RegisterNetEvent('qb-jobgarage:client:Sure', function(data)
+    openSureMenu(data)
+end)
+
+
+RegisterNetEvent('qb-jobgarage:client:Who', function(data)
+    local dialog = exports['qb-input']:ShowInput({
+        header = Config.Lang.whoHeader,
+        submitText = "Submit",
+        inputs = {
+            {
+                text = "ID:",
+                name = "id",
+                type = "number",
+                isRequired = true,
+            },
+        }
+    })
+    if dialog ~= nil then
+        if tonumber(dialog.id) ~= 0 then
+            -- openSureMenu(dialog.id, data)
+            TriggerServerEvent('qb-jobgarage:server:Sure', dialog.id, data)
+        end
+    end
+end)
+
+
+
 
 RegisterNetEvent('qb-jobgarage:client:sayNo', function()
     QBCore.Functions.Notify(Config.Lang.sayNoNotifier, 'error', 2500)
@@ -81,13 +168,7 @@ end)
 
 RegisterNetEvent('qb-jobgarage:client:sayYes', function(data)
     local PlayerData = QBCore.Functions.GetPlayerData()
-    if data.price <= PlayerData.money.cash then
-        TriggerServerEvent('qb-jobgarage:server:buyCar', data, "cash", data.price, data.tune)
-    elseif data.price <= PlayerData.money.bank then
-        TriggerServerEvent('qb-jobgarage:server:buyCar', data, "bank", data.price, data.tune)
-    else
-        QBCore.Functions.Notify(Config.Lang.notEnoughMoney, 'error', 2500)
-    end
+    TriggerServerEvent('qb-jobgarage:server:buyCar', data, data.price, data.tune, data.id)
 end)
 
 RegisterNetEvent('qb-jobgarage:client:sendMail', function(defaultGarage)
@@ -104,7 +185,7 @@ RegisterNetEvent('qb-jobgarage:client:sendMail', function(defaultGarage)
     })
 end)
 
-local function CreateTarget()
+CreateThread(function()
     for k, v in pairs(Config.Locations) do
         if v.usePed then
             local model = v.pedModel
@@ -112,17 +193,15 @@ local function CreateTarget()
             while not HasModelLoaded(model) do
                 Wait(0)
             end
-            local entity = CreatePed(0, v.pedModel, vector3(v.pedCoords.x, v.pedCoords.y, v.pedCoords.z - 1), v.pedCoords.w, true, false)
+            local entity = CreatePed(0, v.pedModel, vector3(v.pedCoords.x, v.pedCoords.y, v.pedCoords.z - 1), v.pedCoords.w, false, false)
             SetBlockingOfNonTemporaryEvents(entity, true)
             FreezeEntityPosition(entity, true)
             SetEntityInvincible(entity, true)
             exports['qb-target']:AddTargetEntity(entity, { -- The specified entity number
                 options = {
                     {
-                        -- type = "client",
-                        -- event = "qb-jobgarage:client:openMenu",
                         action = function()
-                            openMenu(v.job, v.platePrefix, v.defaultGarage)
+                            openMenu(v.job, v.platePrefix, v.defaultGarage, v.payWithBossMenu, v.moneyType)
                         end,
                         job = v.job,
                         icon = "fas fa-sign-in-alt",
@@ -134,8 +213,8 @@ local function CreateTarget()
             })
         else
             local randonmizer = math.random(111111, 999999)
-            exports['qb-target']:AddBoxZone(k..""..randonmizer, vector3(v.coords.x, v.coords.y, v.coords.z), v.width, v.length, {
-                name=k..randonmizer,
+            exports['qb-target']:AddBoxZone(k..""..randonmizer, vector3(v.coords.x, v.coords.y, v.coords.z), v.width, v.lenght, {
+                name=k..""..randonmizer,
                 heading=v.coords.w,
                 debugPoly=Config.PolyDebug,
                 minZ=v.minZ,
@@ -143,10 +222,8 @@ local function CreateTarget()
             }, {
                 options = {
                     {
-                        -- type = "client",
-                        -- event = "qb-jobgarage:client:openMenu",
                         action = function()
-                            openMenu(v.job, v.platePrefix, v.defaultGarage)
+                            openMenu(v.job, v.platePrefix, v.defaultGarage, v.payWithBossMenu, v.moneyType)
                         end,
                         job = v.job,
                         icon = "fas fa-sign-in-alt",
@@ -158,13 +235,13 @@ local function CreateTarget()
             })
         end
     end
-end
+end)
 
 
 
-AddEventHandler('onResourceStart', function(resource)
-    if resource == GetCurrentResourceName() then
-        CreateTarget()
-    end
- end)
+-- AddEventHandler('onResourceStart', function(resource)
+--     if resource == GetCurrentResourceName() then
+--         CreateTarget()
+--     end
+--  end)
 
