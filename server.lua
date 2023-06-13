@@ -40,10 +40,10 @@ local function payment(data, price, Player, origrinalPlayer)
     else
         if origrinalPlayer == nil then
             if Player.Functions.RemoveMoney(data.moneyType, price, Config.Lang.bankStatementText) then
-                if data.moneyType == 'bank' then
-                    local newBankBalance = Player.Functions.GetMoney('bank')
-                    exports['qb-banking']:addBankStatement(Player.PlayerData.citizenid, 'Bank', 0, price, newBankBalance, Config.Lang.bankStatementText, {newBankBalance = newBankBalance})
-                end
+                -- if data.moneyType == 'bank' then
+                    -- local newBankBalance = Player.Functions.GetMoney('bank')
+                    -- exports['qb-banking']:addBankStatement(Player.PlayerData.citizenid, 'Bank', 0, price, newBankBalance, Config.Lang.bankStatementText, {newBankBalance = newBankBalance})
+                -- end
                 return true
             else
                 TriggerClientEvent('QBCore:Notify', Player.PlayerData.source, Config.Lang.notEnoughMoney, "error", 3500)
