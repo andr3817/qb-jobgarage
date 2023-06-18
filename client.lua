@@ -23,7 +23,7 @@ local function openMenu(job, platePrefix, defaultGarage, payWithBossMenu, moneyT
             if canBuy(v.requiredRank, PlayerData) then
                 menu[#menu+1] = {
                     header = v.label,
-                    txt = k,
+                    txt = v.price,
                     icon = 'fas fa-star',
                     isServer = false,
                     params = {
