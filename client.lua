@@ -193,10 +193,11 @@ CreateThread(function()
             while not HasModelLoaded(model) do
                 Wait(0)
             end
-            local entity = CreatePed(0, v.pedModel, vector3(v.pedCoords.x, v.pedCoords.y, v.pedCoords.z - 1), v.pedCoords.w, false, false)
+            local entity = CreatePed(0, model, vector3(v.pedCoords.x, v.pedCoords.y, v.pedCoords.z - 1), v.pedCoords.w, false, false)
             SetBlockingOfNonTemporaryEvents(entity, true)
             FreezeEntityPosition(entity, true)
             SetEntityInvincible(entity, true)
+            print(json.encode(v))
             exports['qb-target']:AddTargetEntity(entity, { -- The specified entity number
                 options = {
                     {
@@ -204,6 +205,7 @@ CreateThread(function()
                             openMenu(v.job, v.platePrefix, v.defaultGarage, v.payWithBossMenu, v.moneyType)
                         end,
                         job = v.job,
+                        gang = v.gang,
                         icon = "fas fa-sign-in-alt",
                         label = Config.Lang.openMenu,
                         
@@ -213,6 +215,7 @@ CreateThread(function()
             })
         else
             local randonmizer = math.random(111111, 999999)
+            print(json.encode(v))
             exports['qb-target']:AddBoxZone(k..""..randonmizer, vector3(v.coords.x, v.coords.y, v.coords.z), v.width, v.lenght, {
                 name=k..""..randonmizer,
                 heading=v.coords.w,
@@ -226,6 +229,7 @@ CreateThread(function()
                             openMenu(v.job, v.platePrefix, v.defaultGarage, v.payWithBossMenu, v.moneyType)
                         end,
                         job = v.job,
+                        gang = v.gang,
                         icon = "fas fa-sign-in-alt",
                         label = Config.Lang.openMenu,
                         
