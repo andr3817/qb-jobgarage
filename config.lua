@@ -3,7 +3,8 @@ Config.PolyDebug = false
 
 Config.Locations = {
     ["police"] = {
-        job = "police",
+        job = nil, -- put this to nil if you don't want to use job
+        gang = "swat", -- put this to nil if you don't want to use gang
         payWithBossMenu = false,
         moneyType = "bank", -- moneyType is only used if payWithBossMenu is false
         platePrefix = "pol", -- This need to be 3 characters long.
