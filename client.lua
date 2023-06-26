@@ -47,7 +47,7 @@ local function openMenu(job, gang, platePrefix, defaultGarage, payWithBossMenu, 
             if canBuy(v.requiredRank, PlayerData, newJob, newGang) then
                 menu[#menu+1] = {
                     header = v.label,
-                    txt = k,
+                    txt = v.price,
                     icon = 'fas fa-star',
                     isServer = false,
                     params = {
