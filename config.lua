@@ -3,8 +3,9 @@ Config.PolyDebug = false
 
 Config.Locations = {
     ["police"] = {
-        job = nil, -- put this to nil if you don't want to use job
-        gang = "swat", -- put this to nil if you don't want to use gang
+        job = {["police"] = 0, ["mehcanic"] = 0},-- This is how you do it if you want multiple jobs {["police"] = 0, ["mehcanic"] = 0} first one inside of square brackets is job name and seconds number is the minimum grade id
+        useGang = false,
+        gang = {["swat"] = 0, ["cds"] = 0}, -- This is only being used if usegang is true first one inside of square brackets is gang name and seconds number is the minimum grade id
         payWithBossMenu = false,
         moneyType = "bank", -- moneyType is only used if payWithBossMenu is false
         platePrefix = "pol", -- This need to be 3 characters long.
