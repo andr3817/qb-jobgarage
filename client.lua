@@ -1,9 +1,15 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local entitys = {}
 
-local function canBuy(data, PlayerData)
+local function canBuy(data, PlayerData, job, gang)
+    local group = nil
+    if Config.Cars[job] then
+        group = PlayerData.job.grade.level
+    elseif Config.Cars[gang] then
+        group = PlayerData.gang.grade.level
+    end
     for i = 1, #data do
-        if data[i] <= PlayerData.job.grade.level then
+        if data[i] <= group then
             return true
         else
             return false
@@ -11,19 +17,37 @@ local function canBuy(data, PlayerData)
     end
 end
 
-local function openMenu(job, platePrefix, defaultGarage, payWithBossMenu, moneyType)
+local function openMenu(job, gang, platePrefix, defaultGarage, payWithBossMenu, moneyType)
     local PlayerData = QBCore.Functions.GetPlayerData()
     local menu = {}
+    local newJob = nil
+    local newGang = nil
+    if job ~= nil then
+        for k, v in pairs(job) do
+            if k == PlayerData.job.name then
+                newJob = k
+            end
+        end
+    end
+    if gang ~= nil then
+        for k, v in pairs(gang) do
+            if k == PlayerData.gang.name then
+                newGang = k
+            end
+        end
+    end
+    local group = Config.Cars[newJob] or Config.Cars[newGang]
+    print(json.encode(group))
     menu[#menu+1] = {
         header = Config.Lang.carMenuHeader,
         icon = 'fas fa-code',
         isMenuHeader = true, -- Set to true to make a nonclickable title
     }
-        for k, v in pairs(Config.Cars[job]) do
-            if canBuy(v.requiredRank, PlayerData) then
+        for k, v in pairs(group) do
+            if canBuy(v.requiredRank, PlayerData, newJob, newGang) then
                 menu[#menu+1] = {
                     header = v.label,
-                    txt = v.price,
+                    txt = k,
                     icon = 'fas fa-star',
                     isServer = false,
                     params = {
@@ -32,7 +56,7 @@ local function openMenu(job, platePrefix, defaultGarage, payWithBossMenu, moneyT
                             model = k,
                             price = v.price,
                             tune = v.fullTune,
-                            job = job,
+                            job = newJob,
                             platePrefix = platePrefix,
                             defaultGarage = defaultGarage,
                             payWithBossMenu = payWithBossMenu,
@@ -187,6 +211,12 @@ end)
 
 CreateThread(function()
     for k, v in pairs(Config.Locations) do
+        local newgang = nil
+        if v.useGang == false then
+            newgang = nil
+        elseif v.useGang == true then
+            newgang = v.gang
+        end
         if v.usePed then
             local model = v.pedModel
             RequestModel(model)
@@ -197,15 +227,14 @@ CreateThread(function()
             SetBlockingOfNonTemporaryEvents(entity, true)
             FreezeEntityPosition(entity, true)
             SetEntityInvincible(entity, true)
-            print(json.encode(v))
             exports['qb-target']:AddTargetEntity(entity, { -- The specified entity number
                 options = {
                     {
                         action = function()
-                            openMenu(v.job, v.platePrefix, v.defaultGarage, v.payWithBossMenu, v.moneyType)
+                            openMenu(v.job, v.gang, v.platePrefix, v.defaultGarage, v.payWithBossMenu, v.moneyType)
                         end,
                         job = v.job,
-                        gang = v.gang,
+                        gang = newgang,
                         icon = "fas fa-sign-in-alt",
                         label = Config.Lang.openMenu,
                         
@@ -226,10 +255,10 @@ CreateThread(function()
                 options = {
                     {
                         action = function()
-                            openMenu(v.job, v.platePrefix, v.defaultGarage, v.payWithBossMenu, v.moneyType)
+                            openMenu(v.job, v.gang, v.platePrefix, v.defaultGarage, v.payWithBossMenu, v.moneyType)
                         end,
                         job = v.job,
-                        gang = v.gang,
+                        gang = newgang,
                         icon = "fas fa-sign-in-alt",
                         label = Config.Lang.openMenu,
                         
